@@ -47,6 +47,7 @@ Pruebas unitarias de los cálculos: clic derecho en `app/src/test` → **Run 'Te
 sorteos/{sorteoId}                      ← cabecera del sorteo
     nombre : string      "Sorteo de prueba PC01"
     fecha  : string      "12/10/2026"   (también acepta timestamp)
+    hora   : string      "20:00"        (opcional; se muestra junto a la fecha)
     estado : string      "abierto" | "en_curso" | "finalizado"
 
 sorteos/{sorteoId}/bolillas/{bolillaId} ← bolillas publicadas (relación por ubicación)
@@ -70,6 +71,7 @@ sorteos/{sorteoId}/jugadas/{uid}        ← una jugada por usuario (id del doc =
 2. ID del documento: `sorteo-prueba`. Campos:
    - `nombre` (string) = `Sorteo de prueba PC01`
    - `fecha` (string) = `12/10/2026`
+   - `hora` (string) = `20:00` (opcional)
    - `estado` (string) = `abierto`
 
 ### Publicar una bolilla (desde la consola)
