@@ -1,0 +1,58 @@
+rules_version = '2';
+
+// Reglas de seguridad para la PC01 - Lotería.
+// Copia este contenido en Firebase Console > Firestore Database > Reglas > Publicar.
+// (La consola de Firebase NO está sujeta a estas reglas, así que desde ahí
+//  se puede crear el sorteo, cambiar su estado y publicar bolillas.)
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function sorteoAbierto(sorteoId) {
+      return get(/databases/$(database)/documents/sorteos/$(sorteoId)).data.estado.lower() == 'abierto';
+    }
+
+    function numeroValido(n) {
+      return n is int && n >= 1 && n <= 45;
+    }
+
+    // Exactamente 6 enteros distintos entre 1 y 45, asociados al sorteo y al usuario.
+    function jugadaValida(sorteoId, uid) {
+      let d = request.resource.data;
+      return d.uid == uid
+        && d.sorteoId == sorteoId
+        && d.numeros is list
+        && d.numeros.size() == 6
+        && d.numeros.toSet().size() == 6
+        && numeroValido(d.numeros[0]) && numeroValido(d.numeros[1])
+        && numeroValido(d.numeros[2]) && numeroValido(d.numeros[3])
+        && numeroValido(d.numeros[4]) && numeroValido(d.numeros[5])
+        && d.keys().hasOnly(['sorteoId', 'uid', 'email', 'numeros', 'registradoEn', 'actualizadoEn']);
+    }
+
+    match /sorteos/{sorteoId} {
+      // Cabecera del sorteo: solo lectura desde la app.
+      allow read: if autenticado();
+      allow write: if false;
+
+      // Bolillas: solo lectura desde la app (se publican desde la consola).
+      match /bolillas/{bolillaId} {
+        allow read: if autenticado();
+        allow write: if false;
+      }
+
+      // Jugadas: cada usuario solo ve y escribe la suya, y solo mientras el sorteo está abierto.
+      match /jugadas/{uid} {
+        allow read: if autenticado() && request.auth.uid == uid;
+        allow create, update: if autenticado()
+          && request.auth.uid == uid
+          && sorteoAbierto(sorteoId)
+          && jugadaValida(sorteoId, uid);
+        allow delete: if false;
+      }
+    }
+  }
+}
